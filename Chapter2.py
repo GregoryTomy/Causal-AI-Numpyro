@@ -7,6 +7,7 @@ import jax.numpy as jnp
 import jax.random as random
 
 import numpyro as nr
+from numpyro.infer import Predictive
 import numpyro.distributions as dist
 
 # Listing 2.1: Implementing a discrete distribution table in pgmpy
@@ -130,3 +131,28 @@ with nr.handlers.seed(rng_seed=0):
     p = x / (5 + x)
     y = nr.sample("y", dist.Bernoulli(p))
     print(z, x, y)
+
+
+# Listing 2.7 Random processes with nuanced control flow in NumPyro
+def random_process_2():
+    z = nr.sample("z", dist.Gamma(7.5, 1.0))
+    x = nr.sample("x", dist.Poisson(z))
+
+    # Note: the sum of y indpendent Bernoulli(0.5) trials
+    # follows a bionmial distribution
+    y = nr.sample("y", dist.Binomial(x, 0.5))
+
+    return y
+
+
+# generating samples pgmpy
+pgmpy_samples = generator.forward_sample(100)
+print(pgmpy_samples.mean())
+
+# generating smaples using numpyro
+
+# generate samples
+predictive = Predictive(random_process_2, num_samples=100)
+samples = predictive(key)
+generated_samples = samples["y"]
+generated_samples.mean()
