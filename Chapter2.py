@@ -1,4 +1,4 @@
-from pgmpy.factors.discrete import iscreteFactor
+from pgmpy.factors.discrete import DiscreteFactor
 from pgmpy.factors.discrete.CPD import TabularCPD
 from pgmpy.models import BayesianNetwork
 from pgmpy.sampling import BayesianModelSampling

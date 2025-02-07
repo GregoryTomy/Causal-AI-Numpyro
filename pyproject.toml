@@ -6,6 +6,8 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "arviz>=0.20.0",
+    "daft>=0.1.2",
+    "dowhy>=0.12",
     "ipython>=8.32.0",
     "numpyro>=0.16.1",
     "pgmpy>=0.1.26",
