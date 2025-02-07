@@ -1,4 +1,4 @@
-from pgmpy.factors.discrete import DiscreteFactor
+from pgmpy.factors.discrete import iscreteFactor
 from pgmpy.factors.discrete.CPD import TabularCPD
 from pgmpy.models import BayesianNetwork
 from pgmpy.sampling import BayesianModelSampling
@@ -156,3 +156,81 @@ predictive = Predictive(random_process_2, num_samples=100)
 samples = predictive(key)
 generated_samples = samples["y"]
 generated_samples.mean()
+
+jnp.square(generated_samples).mean()
+
+
+# Listing 2.9 Monte Carlo estimation in Numpyro
+def random_process_3():
+    z = nr.sample("z", dist.Gamma(7.5, 1.0))
+    x = nr.sample("x", dist.Poisson(z))
+
+    # Note: the sum of y indpendent Bernoulli(0.5) trials
+    # follows a bionmial distribution
+    y = nr.sample("y", dist.Binomial(x, 0.5))
+
+    return y, z
+
+
+predictive_3 = Predictive(random_process_3, num_samples=1000)
+samples = predictive_3(random.PRNGKey(7))
+samples_z = samples["z"]
+z_mean = samples_z.mean()
+
+
+# Estimating E(Z|Y=3)
+z_given_y = jnp.stack([z for z, y in zip(samples["z"], samples["y"]) if y == 3])
+print(z_given_y.mean())
+
+# Listing 2.10 Generating IID samples in Numpyro
+
+
+def random_process_4(num_samples: int):
+    z = nr.sample("z", dist.Gamma(7.5, 1.0))
+    x = nr.sample("x", dist.Poisson(z))
+
+    # Note: the sum of y indpendent Bernoulli(0.5) trials
+    # follows a bionmial distribution
+    with nr.plate("plate_y", num_samples):
+        y = nr.sample("y", dist.Binomial(x, 0.5))
+
+    return y
+
+
+# nr.handlers.seed() wraps the function, ensuring all samples
+# inside use the same fixed random seed
+with nr.handlers.seed(rng_seed=10):
+    samples = random_process_4(10)
+    print(samples)
+
+
+# Listing 2.11 An example of a DGP in code form
+def true_dgp(jenny_inclination, brian_inclination, window_strength):
+    jenny_throws_rock = jenny_inclination > 0.5
+    brian_throws_rock = brian_inclination > 0.5
+    if jenny_throws_rock and brian_throws_rock:
+        strength_of_impact = 0.81
+    elif jenny_throws_rock or brian_throws_rock:
+        strength_of_impact = 0.6
+    else:
+        strength_of_impact = 0.0
+    window_breaks = window_strength < strength_of_impact
+    return jenny_throws_rock, brian_throws_rock, window_breaks
+
+
+# the parameters are latent variables between 0 and 1
+# the return values are the observed variables in the data
+
+initials = [
+    (0.6, 0.31, 0.83),
+    (0.48, 0.53, 0.33),
+    (0.66, 0.63, 0.75),
+    (0.65, 0.66, 0.8),
+    (0.48, 0.16, 0.27),
+]
+
+data_points = []
+for jenny_inclination, brian_inclination, window_strength in initials:
+    data_points.append(true_dgp(jenny_inclination, brian_inclination, window_strength))
+
+data_points
